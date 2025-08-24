@@ -205,7 +205,8 @@ D. مكة
 
             } catch (error) {
                 console.error("Error processing questions:", error);
-                errorMessage.textContent = "حدث خطأ أثناء معالجة الأسئلة. يرجى التحقق من التنسيق والمحاولة مرة أخرى.";
+                // UPDATED: Display a more detailed error message
+                errorMessage.textContent = `حدث خطأ: ${error.message}. يرجى التحقق من التنسيق والمحاولة مرة أخرى.`;
                 return null;
             }
         }
