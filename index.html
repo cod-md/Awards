@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار متعدد الخيارات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f0f2f5; /* A soft, modern background */
+        }
+        .classic-option {
+            font-size: 1.125rem; /* text-lg */
+            margin-bottom: 1rem; /* space-y-4 */
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .classic-option input {
+            margin-left: 0.75rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            accent-color: #dc2626; /* Red accent for the radio button */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="app-container" class="w-full max-w-2xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+        
+        <!-- ======================================================= -->
+        <!-- ==================== Input Screen ===================== -->
+        <!-- ======================================================= -->
+        <div id="input-screen" class="p-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4 text-center">أداة إنشاء الاختبار</h1>
+            <p class="text-gray-600 mb-6 text-center">
+                أدخل أسئلتك متعددة الخيارات في المربع أدناه. تأكد من أن كل سؤال وخياراته في أسطر جديدة، وحدد الإجابة الصحيحة بعلامة (*).
+            </p>
+            <textarea id="questions-input" class="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-red-500" placeholder="مثال:
+ما هي عاصمة المملكة العربية السعودية؟
+A. جدة
+B. الرياض *
+C. الدمام
+D. مكة"></textarea>
+            <div class="mt-6 flex flex-col items-center">
+                 <button id="start-quiz-btn" class="w-full md:w-1/2 bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition-colors duration-300 text-lg flex items-center justify-center">
+                    <span id="start-btn-text">ابدأ الاختبار</span>
+                    <div id="loading-spinner" class="hidden w-6 h-6 border-4 border-t-transparent border-white rounded-full animate-spin"></div>
+                </button>
+                <p id="error-message" class="text-red-500 mt-4 text-center"></p>
+            </div>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- ===================== Quiz Screen ===================== -->
+        <!-- ======================================================= -->
+        <div id="quiz-screen" class="hidden">
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 h-1.5">
+                <div class="bg-yellow-500 h-1.5" style="width: 100%" id="progress-bar"></div>
+            </div>
+             <!-- Header -->
+            <div class="bg-sky-100 p-3">
+                <div class="flex justify-between items-center text-gray-700 text-sm">
+                    <div>
+                        <span>الوقت المتبقي للسؤال: </span>
+                        <span id="timer" class="font-bold">00:45</span>
+                    </div>
+                    <div>
+                        <span>السؤال رقم ( </span>
+                        <span id="question-counter" class="font-bold">2 / 100</span>
+                        <span> )</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8">
+                <!-- Question -->
+                <div class="mb-8">
+                    <h2 id="question-text" class="text-xl font-semibold text-gray-800 leading-relaxed">من الهزائم التي تعد كابوساً دائماً على الوعي العربي, هزيمة...</h2>
+                </div>
+
+                <!-- Options -->
+                <div id="options-container" class="pr-4 space-y-4">
+                    <!-- Options will be dynamically inserted here -->
+                </div>
+
+                <!-- Navigation -->
+                <div class="mt-8 flex justify-center">
+                    <button id="next-question-btn" class="bg-red-600 text-white font-bold py-2 px-10 text-lg rounded-md hover:bg-red-700 transition-colors">التالي</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ======================================================= -->
+        <!-- =================== Results Screen ==================== -->
+        <!-- ======================================================= -->
+        <div id="results-screen" class="hidden p-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">انتهى الاختبار!</h1>
+            <div class="bg-gray-100 p-6 rounded-lg inline-block">
+                <p class="text-xl text-gray-700">نتيجتك النهائية هي:</p>
+                <p id="final-score" class="text-5xl font-bold text-red-600 my-4">8 / 10</p>
+                <p id="time-taken" class="text-lg text-gray-600"></p>
+            </div>
+            <button id="restart-quiz-btn" class="mt-8 bg-red-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-red-700 transition-colors duration-300 text-lg">المحاولة مرة أخرى</button>
+        </div>
+
+    </div>
+
+    <script>
+        // DOM Elements
+        const inputScreen = document.getElementById('input-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        
+        const questionsInput = document.getElementById('questions-input');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const startBtnText = document.getElementById('start-btn-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const errorMessage = document.getElementById('error-message');
+
+        const timerEl = document.getElementById('timer');
+        const questionCounterEl = document.getElementById('question-counter');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const progressBar = document.getElementById('progress-bar');
+
+        const finalScoreEl = document.getElementById('final-score');
+        const timeTakenEl = document.getElementById('time-taken');
+        const restartQuizBtn = document.getElementById('restart-quiz-btn');
+
+        // State
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let timer;
+        let questionTimeRemaining = 45;
+        let totalTimeSpent = 0;
+        const TIME_PER_QUESTION = 45;
+
+        // =======================================================
+        // =================== Gemini API Logic ==================
+        // =======================================================
+        async function processQuestionsWithGemini(rawText) {
+            // IMPORTANT: Replace "" with your actual API key
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const prompt = `
+                You are an expert quiz formatter. Your task is to parse the following text, which contains multiple-choice questions in Arabic, and convert it into a structured JSON format.
+                
+                Follow these rules precisely:
+                1. The output MUST be a valid JSON array.
+                2. Each element in the array must be an object representing a single question.
+                3. Each question object must have three keys: "question" (string), "options" (an array of strings), and "correctAnswer" (a number representing the 0-based index of the correct answer).
+                4. The correct answer in the input is marked with an asterisk (*). Remove the asterisk from the option text in the final JSON.
+                5. Ensure all text is preserved exactly as it appears in the input, including punctuation.
+                6. Before finalizing the option text, strip any leading list markers from the beginning of the string. For example, if an option is "أ. القاهرة", the final output for that option should be just "القاهرة". This applies to markers like "A.", "B.", "ج.", "د)", etc.
+
+                Here is the text to parse:
+                ---
+                ${rawText}
+                ---
+            `;
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: prompt }]
+                }],
+                 generationConfig: {
+                    responseMimeType: "application/json",
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                    const jsonString = result.candidates[0].content.parts[0].text;
+                    const parsedData = JSON.parse(jsonString);
+                    if (Array.isArray(parsedData) && parsedData.length > 0 && parsedData[0].question) {
+                        return parsedData;
+                    }
+                }
+                throw new Error("Invalid data structure received from API.");
+
+            } catch (error) {
+                console.error("Error processing questions:", error);
+                errorMessage.textContent = "حدث خطأ أثناء معالجة الأسئلة. يرجى التحقق من التنسيق والمحاولة مرة أخرى.";
+                return null;
+            }
+        }
+
+        // =======================================================
+        // ====================== Quiz Logic =====================
+        // =======================================================
+
+        function resetAndStartTimer() {
+            clearInterval(timer); 
+            questionTimeRemaining = TIME_PER_QUESTION;
+            
+            timer = setInterval(() => {
+                questionTimeRemaining--;
+                const minutes = Math.floor(questionTimeRemaining / 60).toString().padStart(2, '0');
+                const seconds = (questionTimeRemaining % 60).toString().padStart(2, '0');
+                timerEl.textContent = `${minutes}:${seconds}`;
+                
+                progressBar.style.width = `${(questionTimeRemaining / TIME_PER_QUESTION) * 100}%`;
+
+                if (questionTimeRemaining <= 0) {
+                    moveToNextQuestion(); 
+                }
+            }, 1000);
+        }
+
+        function displayQuestion() {
+            resetAndStartTimer();
+            const currentQuestion = questions[currentQuestionIndex];
+            questionCounterEl.textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
+            questionTextEl.textContent = currentQuestion.question;
+            optionsContainer.innerHTML = '';
+            
+            const optionChars = ['A', 'B', 'C', 'D', 'E', 'F'];
+            currentQuestion.options.forEach((option, index) => {
+                const optionId = `option-${index}`;
+                const optionElement = document.createElement('div');
+                optionElement.className = 'classic-option';
+                optionElement.innerHTML = `
+                    <input type="radio" id="${optionId}" name="options" value="${index}">
+                    <label for="${optionId}">${optionChars[index] || ''}. ${option}</label>
+                `;
+                optionsContainer.appendChild(optionElement);
+            });
+
+            // --- NEW CODE: Lock answer after selection ---
+            const optionInputs = optionsContainer.querySelectorAll('input[name="options"]');
+            optionInputs.forEach(input => {
+                input.addEventListener('change', () => {
+                    optionInputs.forEach(otherInput => {
+                        otherInput.disabled = true;
+                        const parentDiv = otherInput.closest('.classic-option');
+                        parentDiv.classList.add('cursor-not-allowed');
+                        if (!otherInput.checked) {
+                            parentDiv.classList.add('opacity-60');
+                        }
+                    });
+                });
+            });
+            // --- END OF NEW CODE ---
+            
+            if(currentQuestionIndex === questions.length - 1) {
+                nextQuestionBtn.textContent = 'إنهاء الاختبار';
+            } else {
+                nextQuestionBtn.textContent = 'التالي';
+            }
+        }
+
+        function moveToNextQuestion() {
+            clearInterval(timer); 
+
+            totalTimeSpent += (TIME_PER_QUESTION - questionTimeRemaining);
+
+            const selectedOption = document.querySelector('input[name="options"]:checked');
+            userAnswers[currentQuestionIndex] = selectedOption ? parseInt(selectedOption.value) : null;
+
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            } else {
+                endQuiz();
+            }
+        }
+
+        function endQuiz() {
+            clearInterval(timer);
+            let score = 0;
+            userAnswers.forEach((answer, index) => {
+                if (answer === questions[index].correctAnswer) {
+                    score++;
+                }
+            });
+
+            finalScoreEl.textContent = `${score} / ${questions.length}`;
+            const minutes = Math.floor(totalTimeSpent / 60);
+            const seconds = totalTimeSpent % 60;
+            timeTakenEl.textContent = `الوقت المستغرق: ${minutes} دقيقة و ${seconds} ثانية.`;
+            
+            quizScreen.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+        }
+
+        // =======================================================
+        // ==================== Event Listeners ==================
+        // =======================================================
+
+        startQuizBtn.addEventListener('click', async () => {
+            const rawText = questionsInput.value.trim();
+            if (!rawText) {
+                errorMessage.textContent = 'الرجاء إدخال الأسئلة أولاً.';
+                return;
+            }
+            
+            errorMessage.textContent = '';
+            startBtnText.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            startQuizBtn.disabled = true;
+
+            const processedQuestions = await processQuestionsWithGemini(rawText);
+
+            startBtnText.classList.remove('hidden');
+            loadingSpinner.classList.add('hidden');
+            startQuizBtn.disabled = false;
+
+            if (processedQuestions) {
+                questions = processedQuestions;
+                currentQuestionIndex = 0;
+                userAnswers = [];
+                totalTimeSpent = 0;
+
+                inputScreen.classList.add('hidden');
+                quizScreen.classList.remove('hidden');
+
+                displayQuestion();
+            }
+        });
+
+        nextQuestionBtn.addEventListener('click', moveToNextQuestion);
+
+        restartQuizBtn.addEventListener('click', () => {
+            resultsScreen.classList.add('hidden');
+            inputScreen.classList.remove('hidden');
+            questionsInput.value = '';
+        });
+
+    </script>
+</body>
+</html>
