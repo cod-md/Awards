@@ -38,14 +38,15 @@
         <div id="input-screen" class="p-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-4 text-center">أداة إنشاء الاختبار</h1>
             <p class="text-gray-600 mb-6 text-center">
-                أدخل أسئلتك متعددة الخيارات في المربع أدناه. تأكد من أن كل سؤال وخياراته في أسطر جديدة، وحدد الإجابة الصحيحة بعلامة (*).
+                أدخل أسئلتك متعددة الخيارات في المربع أدناه. سيقوم الذكاء الاصطناعي بفهم التنسيق تلقائيًا.
             </p>
             <textarea id="questions-input" class="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-red-500" placeholder="مثال:
-ما هي عاصمة المملكة العربية السعودية؟
+1. ما هي عاصمة المملكة العربية السعودية؟
 A. جدة
-B. الرياض *
+B. الرياض
 C. الدمام
-D. مكة"></textarea>
+D. مكة
+الإجابة الصحيحة: B"></textarea>
             <div class="mt-6 flex flex-col items-center">
                  <button id="start-quiz-btn" class="w-full md:w-1/2 bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition-colors duration-300 text-lg flex items-center justify-center">
                     <span id="start-btn-text">ابدأ الاختبار</span>
@@ -158,9 +159,10 @@ D. مكة"></textarea>
                 1. The output MUST be a valid JSON array.
                 2. Each element in the array must be an object representing a single question.
                 3. Each question object must have three keys: "question" (string), "options" (an array of strings), and "correctAnswer" (a number representing the 0-based index of the correct answer).
-                4. The correct answer in the input is marked with an asterisk (*). Remove the asterisk from the option text in the final JSON.
+                4. The correct answer is indicated by a line at the end of each question block, formatted as "الإجابة الصحيحة: [LETTER]". You must parse this line to determine the correct option. For example, if the line is "الإجابة الصحيحة: B", the correct option is the second one, so the "correctAnswer" value in the JSON should be 1. (A=0, B=1, C=2, D=3). Another possible format is that the correct answer is marked with an asterisk (*). Handle both cases.
                 5. Ensure all text is preserved exactly as it appears in the input, including punctuation.
                 6. Before finalizing the option text, strip any leading list markers from the beginning of the string. For example, if an option is "أ. القاهرة", the final output for that option should be just "القاهرة". This applies to markers like "A.", "B.", "ج.", "د)", etc.
+                7. The input might contain multiple questions. Process all of them and return a single JSON array.
 
                 Here is the text to parse:
                 ---
