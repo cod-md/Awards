@@ -163,6 +163,7 @@ D. مكة
                 5. Ensure all text is preserved exactly as it appears in the input, including punctuation.
                 6. Before finalizing the option text, strip any leading list markers from the beginning of the string. For example, if an option is "أ. القاهرة", the final output for that option should be just "القاهرة". This applies to markers like "A.", "B.", "ج.", "د)", etc.
                 7. The input might contain multiple questions. Process all of them and return a single JSON array.
+                8. Ignore any introductory text or headers before the first question. Start parsing from the first line that looks like a question (e.g., starts with a number like '1.').
 
                 Here is the text to parse:
                 ---
